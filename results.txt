@@ -1,0 +1,5 @@
+5 fold
+faces94 0.98888
+faces95 0.93888
+faces96 0.99403
+grimace 0.99722
