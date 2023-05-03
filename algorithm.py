@@ -23,7 +23,7 @@ def pca_algorithm(X_train, y_train, X_test, y_test):
     # 测试分类器准确率
     accuracy = clf.score(X_test_pca, y_test)
     print('Accuracy:', accuracy)
-    return 
+    return accuracy
 
 def train(model, train_loader, optimizer, loss_function, epoch, args):
 
