@@ -27,7 +27,7 @@ def get_args():
         type=str,
         help='algorithm name')
     parser.add_argument('--pca_dim',
-        default= 150,
+        default= 100,
         type=int,
         help='pca dim')
 

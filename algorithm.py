@@ -6,10 +6,10 @@ from sklearn.svm import SVC
 import torch
 
 
-def pca_algorithm(X_train, y_train, X_test, y_test):
+def pca_algorithm(X_train, y_train, X_test, y_test, args):
     X_train = X_train.reshape(len(X_train), -1)
     X_test = X_test.reshape(len(X_test), -1)
-    pca = PCA(n_components=100)
+    pca = PCA(n_components=args.pca_dim)
     pca.fit(X_train)
 
     X_train_pca = pca.transform(X_train)
