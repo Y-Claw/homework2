@@ -37,7 +37,6 @@ def train(model, train_loader, optimizer, loss_function, epoch, args):
 
         optimizer.zero_grad()
         outputs = model(images)
-        print(outputs.shape, labels.shape, max(labels))
         loss = loss_function(outputs, labels)
         loss.backward()
         optimizer.step()

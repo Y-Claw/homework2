@@ -48,7 +48,7 @@ def get_args():
         type=int,
         help='epoch')
     parser.add_argument('--lr',
-        default=0.0001,
+        default=0.01,
         type=float,
         help='lr')
     parser.add_argument('--wd',
@@ -94,7 +94,10 @@ def main():
             model = eval(args.model_name)(class_num)
             if args.gpu:
                 model.cuda()
-            loss_function = nn.CrossEntropyLoss()
+            if args.loss == 'cross_entropy':
+                loss_function = nn.CrossEntropyLoss()
+            elif args.loss == 'NLL_loss':
+                loss_function = nn.NLLLoss()
             optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.wd)
             accuracy, epoch = resnet_classification(model, train_loader, test_loader, optimizer, loss_function, args)
             results.append(accuracy)
