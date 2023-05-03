@@ -15,20 +15,21 @@ class MyData(Dataset):
         self.dataset = args.dataset
         self.fold_num = args.fold_num
         self.dataset_path = os.path.join(args.raw_dataset_path, args.dataset)
-        self.sample_list, self.labels = self.get_samplelist()
+        self.sample_path_list, self.labels = self.get_sample_path_list()
         self.fold_idx = self.make_kfold_idx(args.fold_num)
+        self.sample_list = self.prepare_sample_list()
 
 
     def __getitem__(self, idx):
-        sample_path, pic_class, label = self.sample_list[idx]
-        data = load_pic(sample_path)
+        sample_path, pic_class, label = self.sample_path_list[idx]
+        data = self.sample_list[idx]
         img_tensor = transforms.ToTensor()
         return img_tensor(data), torch.tensor(label)
     
     def __len__(self):
-        return len(self.sample_list)
+        return len(self.sample_path_list)
 
-    def get_samplelist(self):
+    def get_sample_path_list(self):
         sample_list = []
         labels = []
         if self.dataset == "PIE_dataset":
@@ -58,10 +59,16 @@ class MyData(Dataset):
                     labels.append(i)
         return sample_list, labels
 
+    def prepare_sample_list(self):
+        sample_list = []
+        for sample_path, pic_class, class_idx in self.sample_path_list:
+            sample_list.append(load_pic(sample_path))
+        return sample_list
+
     def make_kfold_idx(self, fold_num):
         skf_train_test = StratifiedKFold(n_splits=fold_num, shuffle=True)
         train_test_idxs = []
-        for train_idx, test_idx in skf_train_test.split(list(range(len(self.sample_list))), self.labels):
+        for train_idx, test_idx in skf_train_test.split(list(range(len(self.sample_path_list))), self.labels):
             train_test_idxs.append([train_idx, test_idx])
         return train_test_idxs
 
@@ -70,7 +77,7 @@ class MyData(Dataset):
         samples = []
         labels = []
         for idx in train_idx:
-            sample_path, pic_class, label = self.sample_list[idx]
+            sample_path, pic_class, label = self.sample_path_list[idx]
             pic_data = load_pic(sample_path)
             if pic_data is not None:
                 samples.append(pic_data)
@@ -84,7 +91,7 @@ class MyData(Dataset):
         samples = []
         labels = []
         for idx in test_idx:
-            sample_path, pic_class, label = self.sample_list[idx]
+            sample_path, pic_class, label = self.sample_path_list[idx]
             samples.append(load_pic(sample_path))
             labels.append(label)
         return np.array(samples), np.array(labels)
