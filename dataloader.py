@@ -1,10 +1,15 @@
 import os
 
+import cv2
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
+from skimage import io
 from sklearn.model_selection import StratifiedKFold
+import dlib
+import pickle
+from tqdm import tqdm
 
 from util import load_pic
 
@@ -14,6 +19,7 @@ class MyData(Dataset):
         self.raw_path = args.raw_dataset_path
         self.dataset = args.dataset
         self.fold_num = args.fold_num
+        self.algorithm = args.algorithm
         self.dataset_path = os.path.join(args.raw_dataset_path, args.dataset)
         self.sample_path_list, self.labels = self.get_sample_path_list()
         self.fold_idx = self.make_kfold_idx(args.fold_num)
@@ -23,8 +29,11 @@ class MyData(Dataset):
     def __getitem__(self, idx):
         sample_path, pic_class, label = self.sample_path_list[idx]
         data = self.sample_list[idx]
-        img_tensor = transforms.ToTensor()
-        return img_tensor(data), torch.tensor(label)
+        if self.algorithm == 'dlib':
+            return data, torch.tensor(label)
+        else:
+            img_tensor = transforms.ToTensor()
+            return img_tensor(data), torch.tensor(label)
     
     def __len__(self):
         return len(self.sample_path_list)
@@ -61,8 +70,36 @@ class MyData(Dataset):
 
     def prepare_sample_list(self):
         sample_list = []
-        for sample_path, pic_class, class_idx in self.sample_path_list:
-            sample_list.append(load_pic(sample_path))
+        if self.algorithm == 'dlib':
+            detector = dlib.get_frontal_face_detector()
+            face_rec = dlib.face_recognition_model_v1("checkpoints/dlib_face_recognition_resnet_model_v1.dat")
+            predictor = dlib.shape_predictor("checkpoints/shape_predictor_68_face_landmarks.dat")
+            sample_dict = {}
+            prepare_path = './prepare/dlib_{}.pkl'.format(self.dataset)
+            if os.path.exists(prepare_path):
+                sample_dict = pickle.load(open(prepare_path, 'rb'))
+
+        for sample_path, pic_class, class_idx in tqdm(self.sample_path_list):
+            if self.algorithm == 'dlib':
+                if sample_path in sample_dict:
+                    face_descriptor = sample_dict[sample_path]
+                else:
+                    img_rd = io.imread(sample_path)
+                    img_gray = cv2.cvtColor(img_rd, cv2.COLOR_BGR2RGB)
+                    try:
+                        faces = detector(img_gray, 1)
+                        shape = predictor(img_gray, faces[0])
+                        face_descriptor = face_rec.compute_face_descriptor(img_gray, shape)
+                    except:
+                        face_descriptor = np.zeros((128,1))
+                    sample_list.append(face_descriptor)
+                    sample_dict[sample_path] = face_descriptor
+            else:
+                sample_list.append(load_pic(sample_path))
+        
+        if self.algorithm == 'dlib' and not os.path.exists(prepare_path):
+            pickle.dump(sample_dict, open(prepare_path, 'wb+'))
+
         return sample_list
 
     def make_kfold_idx(self, fold_num):

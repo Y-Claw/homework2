@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from dataloader import MyData
-from algorithm import pca_algorithm, resnet_classification
+from algorithm import pca_algorithm, resnet_classification, dlib_algorithm
 from resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from torch.utils.data import DataLoader, random_split, Subset
 
@@ -77,7 +77,7 @@ def main():
         for fold_idx in range(args.fold_num):
             train_data, train_labels = dataset.get_all_train_data(fold_idx)
             test_data, test_labels = dataset.get_all_test_data(fold_idx)
-            accuracy = pca_algorithm(train_data, train_labels, test_data, test_labels)
+            accuracy = pca_algorithm(train_data, train_labels, test_data, test_labels, args)
             results.append(accuracy)
         print('Mean Accuracy', sum(results) / len(results))
 
@@ -100,6 +100,15 @@ def main():
                 loss_function = nn.NLLLoss()
             optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.wd)
             accuracy, epoch = resnet_classification(model, train_loader, test_loader, optimizer, loss_function, args)
+            results.append(accuracy)
+        print('Mean Accuracy', sum(results) / len(results))
+
+    elif args.algorithm == 'dlib':
+        results = []
+        for fold_idx in range(args.fold_num):
+            train_data, train_labels = dataset.get_all_train_data(fold_idx)
+            test_data, test_labels = dataset.get_all_test_data(fold_idx)
+            accuracy = dlib_algorithm(train_data, train_labels, test_data, test_labels, args)
             results.append(accuracy)
         print('Mean Accuracy', sum(results) / len(results))
             

@@ -100,3 +100,16 @@ def resnet_classification(model, train_loader, test_loader, optimizer, loss_func
             max_epoch = epoch
             max_accuracy = accuracy
     return max_accuracy, max_epoch
+
+def dlib_algorithm(X_train, y_train, X_test, y_test, args):
+    X_train = X_train.reshape(len(X_train), -1)
+    X_test = X_test.reshape(len(X_test), -1)
+
+    # 训练SVM分类器
+    clf = SVC(kernel='linear')
+    clf.fit(X_train, y_train)
+
+    # 测试分类器准确率
+    accuracy = clf.score(X_test, y_test)
+    print('Accuracy:', accuracy)
+    return accuracy
